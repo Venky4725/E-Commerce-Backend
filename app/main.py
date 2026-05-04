@@ -8,14 +8,20 @@ from app.models import *
 from app.services.cache_service import CacheService
 import os
 from pathlib import Path
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # for development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # auto create tables on startup
 # Disabled - tables should be created with Alembic migrations in production
 # Enable only for specific development testing
