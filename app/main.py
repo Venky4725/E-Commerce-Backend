@@ -5,7 +5,7 @@ from app.api.routes import auth, products, cart, orders, websocket
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.models import *
-from app.services.cache_service import CacheService
+from app.core.redis_client import is_redis_available
 import os
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,7 +49,7 @@ async def root():
 async def redis_health():
     """Health check for Redis connection"""
     try:
-        if await CacheService._is_redis_available():
+        if await is_redis_available():
             return {"status": "healthy", "redis": "connected"}
         else:
             return {"status": "unhealthy", "redis": "disconnected"}
