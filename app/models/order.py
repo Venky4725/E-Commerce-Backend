@@ -10,6 +10,7 @@ from enum import Enum as PyEnum
 class OrderStatus(PyEnum):
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
+    PROCESSING = "PROCESSING"  # Added for compatibility
     SHIPPED = "SHIPPED"
     DELIVERED = "DELIVERED"
     CANCELLED = "CANCELLED"
@@ -23,6 +24,7 @@ class Order(Base):
     total_amount = Column(Float, nullable=False)
     shipping_address = Column(Text, nullable=False)
     billing_address = Column(Text, nullable=False)
+    phone = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

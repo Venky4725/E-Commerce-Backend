@@ -14,3 +14,38 @@ __pycache__/
 
 # Ignore uploads/static files
 uploads/
+app/uploads/
+
+# Ignore test/utility scripts
+test_*.py
+fix_*.py
+check_*.py
+validate_*.py
+
+# Ignore documentation files
+*_COMPLETE.md
+*_SUMMARY.md
+*_REFERENCE.md
+*_QUICK_REF.md
+QUICK_START.md
+BACKEND_READY.md
+
+# Ignore IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore database files
+*.db
+*.sqlite
+*.sqlite3

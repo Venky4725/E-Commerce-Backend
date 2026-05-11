@@ -63,7 +63,17 @@ async def delete_user(db: AsyncSession, user_id: int):
     return db_user
 
 async def authenticate_user(db: AsyncSession, username: str, password: str):
+    """
+    Authenticate user by username OR email.
+    Supports login with either username or email.
+    """
+    # Try username first
     user = await get_user_by_username(db, username)
+    
+    # If not found, try email
+    if not user:
+        user = await get_user_by_email(db, username)
+    
     if not user:
         return False
     if not verify_password(password, user.hashed_password):

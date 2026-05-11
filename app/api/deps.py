@@ -36,3 +36,18 @@ async def get_current_user(
             detail="User not found",
         )
     return user
+
+
+async def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Verify that the current user is an admin.
+    Returns the user if admin, raises 403 Forbidden otherwise.
+    """
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required. You do not have permission to perform this action.",
+        )
+    return current_user

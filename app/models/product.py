@@ -1,7 +1,7 @@
 """
 Product model
 """
-from sqlalchemy import Column, Integer, String, Text, Float, DateTime
+from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Boolean
 from app.core.database import Base
 from datetime import datetime
 
@@ -14,5 +14,6 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock_quantity = Column(Integer, default=0)
     image_url = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)  # Soft delete support
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

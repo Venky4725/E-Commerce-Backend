@@ -1,7 +1,7 @@
 """
 Order Item model
 """
-from sqlalchemy import Column, Integer, ForeignKey, Integer, Float
+from sqlalchemy import Column, Integer, ForeignKey, Float, String, Text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -13,6 +13,10 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
+    
+    # Product snapshot - stored at time of purchase
+    product_name = Column(String, nullable=True)  # Product name at purchase time
+    product_image_url = Column(String, nullable=True)  # Product image at purchase time
 
     # Relationships
     order = relationship("Order", back_populates="order_items")
