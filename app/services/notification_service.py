@@ -42,7 +42,13 @@ class NotificationService:
         db: AsyncSession,
         unread_only: bool = False
     ) -> List[Notification]:
-        """Get all notifications for a user."""
+        """
+        Get all notifications for a specific user.
+        
+        IMPORTANT: Only returns notifications where notification.user_id == user_id.
+        This ensures users only see their own notifications.
+        Admins only see notifications for orders they placed as customers.
+        """
         query = select(Notification).where(Notification.user_id == user_id)
         
         if unread_only:
@@ -51,7 +57,10 @@ class NotificationService:
         query = query.order_by(Notification.created_at.desc())
         
         result = await db.execute(query)
-        return list(result.scalars().all())
+        notifications = list(result.scalars().all())
+        
+        logger.debug(f"📬 Fetched {len(notifications)} notifications for user_id={user_id} (unread_only={unread_only})")
+        return notifications
     
     @staticmethod
     async def mark_as_read(
@@ -129,21 +138,75 @@ class NotificationService:
         new_status: str,
         db: AsyncSession
     ) -> Notification:
-        """Notify user about order status change."""
-        status_messages = {
-            "CONFIRMED": "Your order has been confirmed and is being processed.",
-            "PROCESSING": "Your order is being processed and will be shipped soon.",
-            "SHIPPED": "Your order has been shipped and is on its way!",
-            "DELIVERED": "Your order has been delivered. Thank you for shopping with us!",
-            "CANCELLED": "Your order has been cancelled."
+        """
+        Notify user about order status change with product names.
+        
+        IMPORTANT: Only the order owner (user_id) receives the notification.
+        Admins who update the status do NOT receive notifications.
+        
+        Messages include product names for better UX:
+        - Single item: "Your Mobile order has been shipped."
+        - Multiple items: "Your order containing Mobile and 2 more items has been shipped."
+        """
+        from app.models.order_item import OrderItem
+        
+        # Fetch order items to get product names
+        order_items_result = await db.execute(
+            select(OrderItem).where(OrderItem.order_id == order_id)
+        )
+        order_items = list(order_items_result.scalars().all())
+        
+        # Build product description
+        product_description = "order"
+        if order_items:
+            # Get first product name
+            first_product = order_items[0].product_name or "product"
+            
+            if len(order_items) == 1:
+                # Single product: "Your Mobile order"
+                product_description = f"{first_product} order"
+            else:
+                # Multiple products: "Your order containing Mobile and 2 more items"
+                additional_count = len(order_items) - 1
+                product_description = f"order containing {first_product} and {additional_count} more item{'s' if additional_count > 1 else ''}"
+        
+        # Generate status-specific messages with product names
+        status_templates = {
+            "CONFIRMED": {
+                "title": "Order Confirmed",
+                "message": f"Your {product_description} has been confirmed and is being processed."
+            },
+            "PROCESSING": {
+                "title": "Order Processing",
+                "message": f"Your {product_description} is being processed and will be shipped soon."
+            },
+            "SHIPPED": {
+                "title": "Order Shipped",
+                "message": f"Your {product_description} has been shipped and is on the way!"
+            },
+            "DELIVERED": {
+                "title": "Order Delivered",
+                "message": f"Your {product_description} was delivered successfully. Thank you for shopping with us!"
+            },
+            "CANCELLED": {
+                "title": "Order Cancelled",
+                "message": f"Your {product_description} was cancelled by admin. The amount will be refunded to your account."
+            }
         }
         
+        # Get status-specific title and message
+        status_info = status_templates.get(new_status, {
+            "title": f"Order {new_status.title()}",
+            "message": f"Your {product_description} status has been updated to {new_status}."
+        })
+        
         notification = NotificationCreate(
-            user_id=user_id,
-            title=f"Order {new_status.title()}",
-            message=status_messages.get(new_status, f"Your order status has been updated to {new_status}."),
+            user_id=user_id,  # Only order owner receives notification
+            title=status_info["title"],
+            message=status_info["message"],
             type="order_status_update",
             related_order_id=order_id
         )
         
+        logger.info(f"📬 Creating notification for ORDER OWNER (user_id={user_id}) about order #{order_id} ({product_description}) status: {new_status}")
         return await NotificationService.create_notification(notification, db)

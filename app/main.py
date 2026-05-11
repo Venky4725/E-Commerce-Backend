@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy import text
 
-from app.api.routes import auth, products, cart, orders, websocket, notifications, admin
+from app.api.routes import auth, products, cart, orders, websocket, notifications, admin, users
 from app.core.config import settings
 from app.core.database import engine, AsyncSessionLocal
 from app.core.redis_client import is_redis_available
@@ -167,6 +167,7 @@ logger.info("✅ CORS middleware configured")
 logger.info("🔧 Registering routes...")
 
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["auth"])
+app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
 app.include_router(products.router, prefix=f"{settings.API_V1_STR}/products", tags=["products"])
 app.include_router(cart.router, prefix=f"{settings.API_V1_STR}/cart", tags=["cart"])
 app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/orders", tags=["orders"])

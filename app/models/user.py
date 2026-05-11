@@ -1,7 +1,7 @@
 """
 User model
 """
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, Text
 from app.core.database import Base
 
 class User(Base):
@@ -13,3 +13,5 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    phone = Column(String, nullable=True)
+    address = Column(Text, nullable=True)

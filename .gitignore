@@ -21,14 +21,25 @@ test_*.py
 fix_*.py
 check_*.py
 validate_*.py
+verify_*.py
+cleanup_*.py
 
-# Ignore documentation files
+# Ignore documentation files (keep only README.md)
 *_COMPLETE.md
 *_SUMMARY.md
 *_REFERENCE.md
 *_QUICK_REF.md
-QUICK_START.md
-BACKEND_READY.md
+*_VERIFIED.md
+*_FIX_*.md
+*_READY.md
+QUICK_START*.md
+BACKEND_*.md
+FEATURES_*.md
+NOTIFICATION_*.md
+USER_*.md
+PROFILE_*.md
+API_REFERENCE.md
+README_*.md
 
 # Ignore IDE/Editor files
 .vscode/

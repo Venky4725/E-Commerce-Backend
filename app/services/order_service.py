@@ -326,13 +326,14 @@ class OrderService:
         # Create notification for user
         try:
             from app.services.notification_service import NotificationService
+            # IMPORTANT: Notification is sent to ORDER OWNER (order.user_id), NOT the admin who updated it
             await NotificationService.notify_order_status_change(
-                user_id=order.user_id,
+                user_id=order.user_id,  # Order owner receives notification
                 order_id=order.id,
                 new_status=new_status,
                 db=db
             )
-            logger.info(f"📬 Notification sent to user {order.user_id} for order {order.id} status change: {old_status} → {new_status}")
+            logger.info(f"📬 Notification sent to ORDER OWNER (user_id={order.user_id}) for order {order.id} status change: {old_status} → {new_status}")
         except Exception as e:
             logger.warning(f"⚠️  Failed to create notification: {e}")
 
@@ -394,6 +395,12 @@ class OrderService:
         role = "admin" if is_superuser else "user"
         logger.info(f"🗑️  Deleting order {order_id} (status: {order.status.value}) by {role} {user_id}")
         
+        # Get order items before deletion (for notification)
+        order_items_result = await db.execute(
+            select(OrderItem).where(OrderItem.order_id == order_id)
+        )
+        order_items = list(order_items_result.scalars().all())
+        
         # Delete order items first
         deleted_items = await db.execute(
             OrderItem.__table__.delete().where(OrderItem.order_id == order_id)
@@ -410,15 +417,25 @@ class OrderService:
                 from app.services.notification_service import NotificationService
                 from app.schemas.notification_schema import NotificationCreate
                 
+                # Build product description for notification
+                product_description = "order"
+                if order_items:
+                    first_product = order_items[0].product_name or "product"
+                    if len(order_items) == 1:
+                        product_description = f"{first_product} order"
+                    else:
+                        additional_count = len(order_items) - 1
+                        product_description = f"order containing {first_product} and {additional_count} more item{'s' if additional_count > 1 else ''}"
+                
                 notification = NotificationCreate(
                     user_id=order.user_id,
                     title="Order Deleted by Admin",
-                    message=f"Your order #{order_id} has been deleted by an administrator. If you have any questions, please contact support.",
+                    message=f"Your {product_description} has been deleted by an administrator. If you have any questions, please contact support.",
                     type="order_deleted",
                     related_order_id=order_id
                 )
                 await NotificationService.create_notification(notification, db)
-                logger.info(f"📬 Notification sent to user {order.user_id} about order {order_id} deletion")
+                logger.info(f"📬 Notification sent to user {order.user_id} about order {order_id} ({product_description}) deletion")
             except Exception as e:
                 logger.warning(f"⚠️  Failed to create notification: {e}")
         
@@ -547,15 +564,25 @@ class OrderService:
                 from app.services.notification_service import NotificationService
                 from app.schemas.notification_schema import NotificationCreate
                 
+                # Build product description for notification
+                product_description = "order"
+                if order_items:
+                    first_product = order_items[0].product_name or "product"
+                    if len(order_items) == 1:
+                        product_description = f"{first_product} order"
+                    else:
+                        additional_count = len(order_items) - 1
+                        product_description = f"order containing {first_product} and {additional_count} more item{'s' if additional_count > 1 else ''}"
+                
                 notification = NotificationCreate(
                     user_id=order.user_id,
                     title="Order Cancelled by Admin",
-                    message=f"Your order #{order_id} has been cancelled by an administrator. The amount will be refunded to your account.",
+                    message=f"Your {product_description} has been cancelled by an administrator. The amount will be refunded to your account.",
                     type="order_cancelled",
                     related_order_id=order_id
                 )
                 await NotificationService.create_notification(notification, db)
-                logger.info(f"📬 Notification sent to user {order.user_id} about order {order_id} cancellation")
+                logger.info(f"📬 Notification sent to user {order.user_id} about order {order_id} ({product_description}) cancellation")
             except Exception as e:
                 logger.warning(f"⚠️  Failed to create notification: {e}")
         
